@@ -106,7 +106,7 @@ pA = f <$> symbol 'a' <*> symbol 'b' <*>
   Int -> Sinal Digitos
   Sinal -> '+'
          |  '-'
-	 |
+       |
   Digitos -> dig
           |  dig Digitos
 -}
@@ -129,8 +129,8 @@ pSinal =   symbol '-'
 
 pDigitos =  f <$> (satisfy isDigit)
         <|> g <$> (satisfy isDigit) <*> pDigitos
-	where f d = [d]
-	      g d ds = d : ds
+      where f d = [d]
+            g d ds = d : ds
 
 
 oneOrMore p =   f <$>  p
@@ -140,7 +140,7 @@ oneOrMore p =   f <$>  p
 
 pString = f <$> symbol '\"' <*>
                 zeroOrMore (satisfy (/= '\"')) <*>
-	        symbol '\"'
+              symbol '\"'
    where f a b c = b
 
 ex = pString "\"abcd  ajajd29309283092 e\""
@@ -148,11 +148,11 @@ ex = pString "\"abcd  ajajd29309283092 e\""
 
 zeroOrMore p  =        succeed []
              <|> f <$> p <*> (zeroOrMore p)
-	     where f x y = x:y
+           where f x y = x:y
 
 optional p =   f <$>  p
           <|>         succeed []
-	  where f a = [a]
+        where f a = [a]
 
 sinal =  symbol '+'
      <|> symbol '-'
@@ -169,7 +169,7 @@ separatedBy p s =  f <$> p
 
 followedBy p s =     succeed []
               <|> f <$> p <*> s <*> (followedBy p s)
-	    where f a _ b = a : b
+          where f a _ b = a : b
 
 
 
@@ -180,12 +180,12 @@ enclosedBy a c f = (\_ b _ -> b) <$>  a <*> c <*> f
 pListasIntHaskell =
      enclosedBy (symbol '[')
                 (separatedBy pInt (symbol ','))
-		(symbol ']')
+            (symbol ']')
 
 blocoCodigoC =
      enclosedBy (symbol '{')
                 (followedBy pInt (symbol ';'))
-		(symbol '}')
+            (symbol '}')
 
 espacos = zeroOrMore (satisfy isSpace)
 symbol' a  = (\a b -> a) <$> symbol a <*> espacos
@@ -194,8 +194,13 @@ satisfy' p = (\a b -> a) <$> satisfy p <*> espacos
 
 pNomes    =  f <$> satisfy isLower
                <*> zeroOrMore (satisfy isAlphaNum)
-	       <*> espacos
+             <*> espacos
           where f a b c = a : b
+
+pBool = f <$> token' "@true"
+     <|> g <$> token' "@false"
+     where f a = True
+           g a = False
 
 
 
