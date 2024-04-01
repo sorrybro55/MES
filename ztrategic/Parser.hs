@@ -197,10 +197,8 @@ pNomes    =  f <$> satisfy isLower
              <*> espacos
           where f a b c = a : b
 
-pBool = f <$> token' "@true"
-     <|> g <$> token' "@false"
-     where f a = True
-           g a = False
+pBool = (\x -> True) <$> token' "@true"
+     <|> (\x -> False) <$> token' "@false"
 
 
 
