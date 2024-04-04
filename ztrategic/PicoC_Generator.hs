@@ -77,20 +77,28 @@ genExpBool s = frequency [(1, do { f <- arbitrary;
                         return (Not a)} )]
         where s' = s `div` 2
 
+genExpInt_Add s = do {
+    a <- genExpInt (s `div` 2);
+    b <- genExpInt (s `div` 2);
+    return (Add a b)
+}
+
+genExpInt_Mul s = do {
+    a <- genExpInt (s `div` 2);
+    b <- genExpInt (s `div` 2);
+    return (Mul a b)
+}
+
 genExpInt s = frequency [(1, do { f <- arbitrary;
                             return (ConstInt f)} ),
-                        (s, do {
-                            a <- genExpInt s';
-                            b <- genExpInt s';
-                            return (Add a b)} ),
+                        (s, do { f <- genExpInt_Add s';
+                            return f} ),
                         (s, do {
                             a <- genExpInt s';
                             b <- genExpInt s';
                             return (Sub a b)} ),
-                        (s, do {
-                            a <- genExpInt s';
-                            b <- genExpInt s';
-                            return (Mul a b)} ),
+                        (s, do { f <- genExpInt_Mul s';
+                            return f } ),
                         (s, do {
                             a <- genExpInt s';
                             b <- genExpInt s';
