@@ -47,49 +47,25 @@ instr ((ITE (ConstBool True) bc _) : t) = Just (bc++t)
 instr ((ITE (ConstBool False) _ bc): t) = Just (bc++t)
 instr _ = Nothing
 
-
-merge_conditions :: BlocoC -> Maybe BlocoC
+merge_conditions:: BlocoC -> Maybe BlocoC
 merge_conditions x =
-    let grouped_ifs = groupBy sameThenExpr (filter isITE x)
+    let list_ITE = (filter isITE x)
         isITE inst = case inst of 
             ITE{} -> True 
             _     -> False 
+        grouped_ifs = groupBy sameThenExpr list_ITE
         sameThenExpr (ITE _ expr1 _) (ITE _ expr2 _) = unparserINST_aux expr1 == unparserINST_aux expr2
         mergeITEs (ITE cond1 expr1 _) (ITE cond2 _ _) = ITE (Or cond1 cond2) expr1 []  -- Merge the ITEs keeping the first condition and then expression
         merged_ifs = map (foldr1 mergeITEs) grouped_ifs
         rest_instructions = filter (not . isITE) x
-    in Just (rest_instructions ++ merged_ifs)
- 
-merge_conditions' :: BlocoC -> Maybe BlocoC
-merge_conditions' x =
-    let grouped_ifs = groupBy sameThenExpr (filter isITE x)
-        isITE inst = case inst of 
-            ITE{} -> True 
-            _     -> False 
-        sameThenExpr (ITE _ expr1 _) (ITE _ expr2 _) = unparserINST_aux expr1 == unparserINST_aux expr2
-        mergeITEs (ITE cond1 expr1 _) (ITE cond2 _ _) = ITE (Or cond1 cond2) expr1 []  -- Merge the ITEs keeping the first condition and then expression
-        merged_ifs = map (foldr1 mergeITEs) grouped_ifs
-        rest_instructions = filter (not . isITE) x
-    in if null grouped_ifs then Nothing else Just (rest_instructions ++ merged_ifs)
-
-opt':: PicoC -> PicoC
-opt' p = 
-    let pZipper = toZipper p
-        Just newP = applyTP (once_tdTP optimized_expressions) pZipper
-            where optimized_expressions = failTP `adhocTP` merge_conditions'
-    in fromZipper newP
+    in if null grouped_ifs || length list_ITE == length merged_ifs then Nothing else Just (rest_instructions ++ merged_ifs)
 
 opt:: PicoC -> PicoC
 opt p = 
     let pZipper = toZipper p
-        Just opt_expr = applyTP (innermost optimized_expressions) pZipper
-            where optimized_expressions = failTP `adhocTP` instr `adhocTP` expr
-        Just consCond_expr = applyTP (full_tdTP consCond) opt_expr
-            where consCond = idTP `adhocTP` merge_conditions     
-        Just newP = applyTP (innermost optimized_instructions) consCond_expr
-            where optimized_instructions = failTP `adhocTP` instr
+        Just newP = applyTP (innermost optimized_expressions) pZipper
+            where optimized_expressions = failTP `adhocTP` merge_conditions `adhocTPSeq` instr `adhocTP` expr
     in fromZipper newP
-
 
 etiquetaVars:: PicoC -> PicoC
 etiquetaVars p = 
