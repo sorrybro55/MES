@@ -16,6 +16,9 @@ data Inst = Atrib String Exp
             | While Exp BlocoC
             | ITE Exp BlocoC BlocoC
             | Init PicoCDatatype String
+            | ReturnString String
+            | ReturnInt Int
+            | ReturnBool Bool
             deriving (Show, Data)
 
 data PicoCDatatype = INT | CHAR deriving (Show, Data, Eq)
@@ -41,6 +44,8 @@ data Exp = ConstInt Int
         | Le Exp Exp
         deriving (Show, Data)
 
+type Inputs = [(String, Int)]
+
 --Instance--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 instance StrategicData PicoC 
@@ -53,7 +58,10 @@ instance Eq Inst where
         (While exp1 bc1) == (While exp2 bc2) = (exp1 == exp2) && (bc1 == bc2)
         (ITE exp1 then1 else1) == (ITE exp2 then2 else2) = (exp1 == exp2) && (then1 == then2) && (else1 == else2)
         (Init type1 var1) == (Init type2 var2) = type1 == type2 && (var1 == var2)
-
+        (ReturnString str1) == (ReturnString str2) = str1 == str2
+        (ReturnInt val1) == (ReturnInt val2) = val1 == val2
+        (ReturnBool bol1) == (ReturnBool bol2) = bol1 == bol2
+        
 instance Eq Exp where
         (ConstInt x) == (ConstInt y) = x == y
         (ConstBool x) == (ConstBool y) = x == y

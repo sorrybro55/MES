@@ -60,11 +60,16 @@ pITE =  g <$> token' "if" <*> enclosedBy (symbol' '(') pExpBool (symbol' ')')
     where f _ x _ y _ z = ITE x y z
           g _ x _ y = ITE x y []
 
+pReturn = (\_ x _ -> ReturnInt x)  <$> token' "return" <*> pInt <*> symbol' ';'
+    <|>   (\_ x _ -> ReturnBool x) <$> token' "return" <*> pBool <*> symbol' ';'
+    <|>   (\_ x _ -> ReturnString x) <$> token' "return" <*> pNomes <*> symbol' ';'
+
 
 pInst = pAtrib 
     <|> pWhile
     <|> pITE
-    <|> pInit 
+    <|> pInit
+    <|> pReturn
 
 pPicoC = f <$> zeroOrMore pInst
         where f a = PicoC a

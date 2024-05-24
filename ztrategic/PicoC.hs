@@ -9,7 +9,8 @@ import PicoC_Functions
 import Control.Monad
 
 -- EXAMPLES -----------------------------------------------------------------------------
-example1 = pPicoC "int margem; margem = 15; while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;}"
+--"int margem; margem = 15; while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;} return margem;"
+example1 = pPicoC "while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;} return margem;"
 example2 = pPicoC "int margem; margem = 15-2; if ( margem > 30 + 3 && @false) then { margem = 4 * 23 + 3; } else { margem = 3+0; a = 3*0;}"
 example3 = pPicoC "int n; int result; n = 5+5;    result = 1*0;while (n <= 3 ||  (@false && n == 10)) { result = result * (n + 1); n = n - 1*0; }"
 example4 = pPicoC "int num; int isPrime; int i; num = 17; isPrime = 1; i = 2; while (i < num) { if (num == 2) then { isPrime = @true;} else { if (num / i == 0) then { isPrime = @false; } } i = i + 1; }"
@@ -67,3 +68,8 @@ prop_mul_neutral = forAll (genExpInt_Mul 1) $ \e ->
 prop_mul_comm :: Exp -> Exp -> Property
 prop_mul_comm x y = forAll (liftM2 (,) (genExpInt_Mul 1) (genExpInt_Mul 1)) $ \(e1, e2) ->
     eval (Mul e1 e2) == eval (Mul e2 e1)
+
+
+
+s1 = (test1 . pPicoC) "int margem; margem = 15-2; if ( margem > 30 + 3 && @false) then { margem = 4 * 23 + 3; } else { margem = 3 + x; a = 3*0;} return margem;"
+i1 = [("b", 2::Int), ("c", 8::Int)]
