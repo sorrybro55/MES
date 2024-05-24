@@ -16,6 +16,7 @@ data Inst = Atrib String Exp
             | While Exp BlocoC
             | ITE Exp BlocoC BlocoC
             | Init PicoCDatatype String
+            | Print String
             | ReturnString String
             | ReturnInt Int
             | ReturnBool Bool

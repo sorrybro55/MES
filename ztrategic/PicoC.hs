@@ -7,6 +7,9 @@ import PicoC_Unparser
 import PicoC_Generator
 import PicoC_Functions
 import Control.Monad
+import Data.Generics.Zipper
+import Library.Ztrategic
+import Library.StrategicData (StrategicData)
 
 -- EXAMPLES -----------------------------------------------------------------------------
 --"int margem; margem = 15; while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;} return margem;"
@@ -69,7 +72,44 @@ prop_mul_comm :: Exp -> Exp -> Property
 prop_mul_comm x y = forAll (liftM2 (,) (genExpInt_Mul 1) (genExpInt_Mul 1)) $ \(e1, e2) ->
     eval (Mul e1 e2) == eval (Mul e2 e1)
 
+mutateBinaryExp:: Exp -> Exp -> Gen Exp
+mutateBinaryExp e1 e2 = elements [Add e1 e2, Sub e1 e2, Mul e1 e2, Div e1 e2,
+ Gt e1 e2, Ls e1 e2, Ge e1 e2, Le e1 e2, And e1 e2, Or e1 e2, Eq e1 e2, Neq e1 e2]
 
+mutateExp:: Exp -> Gen Exp
+mutateExp (Add e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Sub e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Mul e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Div e1 e2) = mutateBinaryExp e1 e2
+mutateExp (And e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Or e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Gt e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Ls e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Eq e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Neq e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Ge e1 e2) = mutateBinaryExp e1 e2
+mutateExp (Le e1 e2) = mutateBinaryExp e1 e2
 
-s1 = (test1 . pPicoC) "int margem; margem = 15-2; if ( margem > 30 + 3 && @false) then { margem = 4 * 23 + 3; } else { margem = 3 + x; a = 3*0;} return margem;"
-i1 = [("b", 2::Int), ("c", 8::Int)]
+genPicoMutation:: PicoC -> Gen PicoC
+genPicoMutation pico = do 
+    chosen <- elements (getExps pico)
+    mutatedExp <- mutateExp chosen
+    let pZipper = toZipper pico
+        Just newP = applyTP (once_tdTP step) pZipper
+            where step = failTP `adhocTP` (applyMutation (chosen, mutatedExp))
+    return (fromZipper newP)
+
+applyMutation:: (Exp, Exp) -> Exp -> Maybe Exp
+applyMutation (original, mutated) exp 
+    | exp == original = Just mutated
+    | otherwise = Nothing
+
+getExps:: PicoC -> [Exp]
+getExps pico = 
+    let pZipper = toZipper pico 
+        Just newP = applyTU (full_tdTU step) pZipper
+            where step = failTU `adhocTU` groupExp
+    in newP
+
+groupExp:: Exp -> Maybe [Exp]
+groupExp e = Just [e]

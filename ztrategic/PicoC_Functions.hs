@@ -9,6 +9,7 @@ import Data.Generics.Zipper
 import Library.Ztrategic
 import Library.StrategicData (StrategicData)
 import PicoC_Unparser
+import Debug.Trace
 
 eval:: Exp -> Int
 eval e = eval_aux e []
@@ -111,6 +112,7 @@ insertOrUpdate key value list =
 
 evaluate:: PicoC -> Inputs -> Int 
 evaluate (PicoC []) _ = 0
+evaluate (PicoC ((Print text): t) ) inputs = trace (text ++ "\n") (evaluate (PicoC t) inputs)
 evaluate (PicoC ((ReturnInt value): _)) inputs = value
 evaluate (PicoC ((ReturnString var_name): _)) inputs = fromJust (lookup var_name inputs)
 evaluate (PicoC ((ReturnBool bool): _)) inputs = if bool then 1 else 0
@@ -128,4 +130,10 @@ evaluate (PicoC ((While cond exp): t)) inputs =
     let cond_result = eval_aux cond inputs
         newInst = if cond_result == 1 then exp ++ [While cond exp] ++ t else t
     in evaluate (PicoC newInst) inputs
-    
+
+runTest:: PicoC -> (Inputs, Int) -> Bool
+runTest pico (inputs, expected) = (evaluate pico inputs) == expected
+
+runTestSuite:: PicoC -> [(Inputs, Int)] -> Bool
+runTestSuite pico [] = True
+runTestSuite pico (h: t) = if runTest pico h then runTestSuite pico t else False
