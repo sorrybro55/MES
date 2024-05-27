@@ -23,7 +23,7 @@ eval_aux (Add e d) c = eval_aux e c + eval_aux d c
 eval_aux (Sub e d) c = eval_aux e c - eval_aux d c
 eval_aux (Mul e d) c = eval_aux e c * eval_aux d c
 eval_aux (Div e d) c = eval_aux e c `div` eval_aux d c
-eval_aux (Not e) c = if (eval_aux e c) == 0 then 1 else 1 
+eval_aux (Not e) c = if (eval_aux e c) == 1 then 0 else 1 
 eval_aux (And e d) c = (eval_aux e c) * (eval_aux d c)
 eval_aux (Or e d) c = (eval_aux e c) + (eval_aux d c)
 eval_aux (Gt e d) c = if (eval_aux e c) > (eval_aux d c) then 1 else 0
@@ -50,8 +50,12 @@ expr (Sub e d)                         = Just (Add e (Neg d))
 expr (Not (Not x))                     = Just x
 expr (And (ConstBool False) _ )        = Just (ConstBool False)
 expr (And _ (ConstBool False))         = Just (ConstBool False)
+expr (And (ConstBool True) x )        = Just x
+expr (And x (ConstBool True))         = Just x
 expr (Or (ConstBool True) _)           = Just (ConstBool True)
 expr (Or _ (ConstBool True))           = Just (ConstBool True)
+expr (Or (ConstBool False) x )        = Just x
+expr (Or x (ConstBool False))         = Just x
 expr _ = Nothing
 
 instr:: BlocoC -> Maybe BlocoC
@@ -111,8 +115,8 @@ insertOrUpdate key value list =
 
 
 evaluate:: PicoC -> Inputs -> Int 
-evaluate (PicoC []) _ = 0
-evaluate (PicoC ((Print text): t) ) inputs = trace (text ++ "\n") (evaluate (PicoC t) inputs)
+evaluate (PicoC []) _ = -1
+evaluate (PicoC ((Print text): t) ) inputs = trace (show text ++ "\n") (evaluate (PicoC t) inputs)
 evaluate (PicoC ((ReturnInt value): _)) inputs = value
 evaluate (PicoC ((ReturnString var_name): _)) inputs = fromJust (lookup var_name inputs)
 evaluate (PicoC ((ReturnBool bool): _)) inputs = if bool then 1 else 0
@@ -125,7 +129,7 @@ evaluate (PicoC ((Init INT var_name): t)) inputs =
     in evaluate (PicoC t) new_inputs
 evaluate (PicoC ((ITE cond b1 b2): t)) inputs = 
     let cond_result = eval_aux cond inputs
-    in if cond_result == 1 then evaluate (PicoC (b1 ++ t)) inputs else evaluate (PicoC (b2 ++ t)) inputs
+    in if cond_result /= 0 then evaluate (PicoC (b1 ++ t)) inputs else evaluate (PicoC (b2 ++ t)) inputs
 evaluate (PicoC ((While cond exp): t)) inputs =
     let cond_result = eval_aux cond inputs
         newInst = if cond_result == 1 then exp ++ [While cond exp] ++ t else t

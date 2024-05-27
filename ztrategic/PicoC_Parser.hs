@@ -46,7 +46,7 @@ pInit =     f <$> token' "int" <*> oneOrMore (satisfy isSpace) <*> pNomes <*> sy
     where f _ _ x _ = Init INT x
           g _ _ x _ = Init CHAR x  
 
-pAtrib =    f <$> pNomes <*> symbol' '=' <*> pExpAdd_Sub <*> symbol' ';' 
+pAtrib =    f <$> pNomes <*> symbol' '=' <*> pExpBool <*> symbol' ';' 
     where f a b c  _ = Atrib a c 
 
 pWhile = f <$> token' "while" <*> enclosedBy (symbol' '(') pExpBool (symbol' ')') <*> pBlocoC

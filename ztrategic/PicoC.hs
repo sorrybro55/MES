@@ -13,18 +13,69 @@ import Library.StrategicData (StrategicData)
 
 -- EXAMPLES -----------------------------------------------------------------------------
 --"int margem; margem = 15; while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;} return margem;"
-example1 = pPicoC "while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;} return margem;"
-example2 = pPicoC "int margem; margem = 15-2; if ( margem > 30 + 3 && @false) then { margem = 4 * 23 + 3; } else { margem = 3+0; a = 3*0;}"
-example3 = pPicoC "int n; int result; n = 5+5;    result = 1*0;while (n <= 3 ||  (@false && n == 10)) { result = result * (n + 1); n = n - 1*0; }"
-example4 = pPicoC "int num; int isPrime; int i; num = 17; isPrime = 1; i = 2; while (i < num) { if (num == 2) then { isPrime = @true;} else { if (num / i == 0) then { isPrime = @false; } } i = i + 1; }"
-example5 = pPicoC "x=0;if (seniority < 2) then {if (senioritys > 122) then {return = 0;} if (senioritys > 10022) then {return = 0;}  } if (monthsDisabled > 12) then {return = 5;} if (abs <= 4) then {return = 5;} if (monthsDisabled > 12) then {return = 4;} if (abs <= 4) then {return = 4;}"
+--example1 = pPicoC "while ( margem > 30) { margem = 4 * 23 + 3; margem = 0+5;} return margem;"
+--example2 = pPicoC "int margem; margem = 15-2; if ( margem > 30 + 3 && @false) then { margem = 4 * 23 + 3; } else { margem = 3+0; a = 3*0;}"
+--example3 = pPicoC "int n; int result; n = 5+5;    result = 1*0;while (n <= 3 ||  (@false && n == 10)) { result = result * (n + 1); n = n - 1*0; }"
+--example4 = pPicoC "int num; int isPrime; int i; num = 17; isPrime = 1; i = 2; while (i < num) { if (num == 2) then { isPrime = @true;} else { if (num / i == 0) then { isPrime = @false; } } i = i + 1; }"
+--example5 = pPicoC ""
 
-test1 = fst . last 
-test2 = opt . test1
-test3 = unparser . test1
-test4 = unparser . test2
-test5 = pPicoC . test3
-test6 = pPicoC . test4
+--Calculadora(x,y)
+programa1 = parse "int result;\
+            \if ( operation == 1 || @false ) then { result = x + y; }\
+            \if ( operation == 2 ) then { result = x - y; }\
+            \if ( operation == 3 && @true ) then { result = x * y; }\
+            \if ( operation == 4 ) then { result = x / y; }\
+            \return result;"
+
+testSuitePrograma1 = [([("x", 3::Int), ("y", 2::Int), ("operation", 1::Int)], 5),
+                        ([("x", 3::Int), ("y", 2::Int), ("operation", 2::Int)], 1),
+                        ([("x", 3::Int), ("y", 2::Int), ("operation", 3::Int)], 6),
+                        ([("x", 3::Int), ("y", 2::Int), ("operation", 4::Int)], 1)]
+runTestSuitePrograma1 = runTestSuite programa1 testSuitePrograma1
+
+
+--Fatorial(x)
+programa2 = parse "int fac;\
+            \int result;\
+            \fac = 1;\
+            \result = 1;\
+            \while(n > 1) {\
+            \   result = fac * n;\
+            \   fac = result;\
+            \   n = n - 1;\ 
+            \}\
+            \return result;"
+testSuitePrograma2 = [([("n", 3::Int)], 6),
+                        ([("n", 1::Int)], 1),
+                        ([("n", 0::Int)], 1),
+                        ([("n", 5::Int)], 120)]
+runTestSuitePrograma2 = runTestSuite programa2 testSuitePrograma2
+
+
+--Max3(x,y)
+programa3 = parse "int max;\
+            \if (x > y) then {\
+            \    max = 1;\
+            \}\
+            \else {\
+            \   if (y == 10) then {\
+            \       max = 1;\
+            \   }\
+            \   else {\
+            \       max = 2;\
+            \   }\
+            \}return max;"
+testSuitePrograma3 = [([("x", 22::Int), ("y", 3::Int)], 1),
+                        ([("x", 1::Int), ("y", 20::Int)], 2),
+                        ([("x", 1::Int), ("y", 10::Int)], 1),
+                        ([("x", 0::Int), ("y", 0::Int)], 2)]
+runTestSuitePrograma3 = runTestSuite programa3 testSuitePrograma3
+
+
+parse = fst . last . pPicoC
+opt_parse = opt . parse
+unparse = unparser . parse
+opt_unparse = unparser . opt_parse
 
 -- TESTING -----------------------------------------------------------------------------------------------
 tester :: IO ()
@@ -38,6 +89,15 @@ tester = do
             putStrLn $ "Unparsed: " ++ unparsed ++ "\n"
             putStrLn $ "Unparsed Optimized: " ++ unparsedOpt
             putStrLn "-------------------") samples
+
+generatePico :: IO ()
+generatePico = do
+    sample <- generate (arbitrary :: Gen PicoC)
+    let optimized = opt sample
+        unparsed = unparser sample
+        unparsedOpt = unparser optimized
+    putStrLn $ "Original: " ++ show sample ++ "\n"
+    putStrLn $ "Unparsed: " ++ unparsedOpt ++ "\n"
 
 -- PROPERTIES -------------------------------------------------------------------------------------------- 
 
@@ -71,6 +131,9 @@ prop_mul_neutral = forAll (genExpInt_Mul 1) $ \e ->
 prop_mul_comm :: Exp -> Exp -> Property
 prop_mul_comm x y = forAll (liftM2 (,) (genExpInt_Mul 1) (genExpInt_Mul 1)) $ \(e1, e2) ->
     eval (Mul e1 e2) == eval (Mul e2 e1)
+
+prop_validAST:: PicoC -> Property
+prop_validAST pico = (opt_parse (unparser pico)) === pico
 
 mutateBinaryExp:: Exp -> Exp -> Gen Exp
 mutateBinaryExp e1 e2 = elements [Add e1 e2, Sub e1 e2, Mul e1 e2, Div e1 e2,
@@ -113,3 +176,28 @@ getExps pico =
 
 groupExp:: Exp -> Maybe [Exp]
 groupExp e = Just [e]
+
+instrumentation:: PicoC -> PicoC
+instrumentation (PicoC inst) = PicoC (aux inst)
+    where 
+        aux [] = []
+        aux (i:is) = Print ("Executing: " ++ show i) : i : aux is
+
+instrumentedTestSuite :: PicoC -> [(Inputs, Int)] -> Bool
+instrumentedTestSuite program tests =
+    all (\(inputs, expected) -> evaluate (instrumentation program) inputs == expected) tests
+
+runTestSuiteMutation:: PicoC -> [(Inputs, Int)] -> Gen Bool
+runTestSuiteMutation pico [] = return True
+runTestSuiteMutation pico (h:t) = do
+    mutatedPico <- genPicoMutation pico
+    let (inputs, expected) = h
+        result =  runTest mutatedPico (inputs, expected)
+    if result 
+        then runTestSuiteMutation mutatedPico t
+        else return False
+
+running :: IO ()
+running = do
+    result <- generate (runTestSuiteMutation programa1 testSuitePrograma1)
+    putStrLn $ "Resultado dos testes com mutações: " ++ show result

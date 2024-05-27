@@ -8,7 +8,7 @@ get_varName = elements ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
 instance Arbitrary PicoC where 
     arbitrary = do
-        insts <- sized $ \n -> resize (n `div` 2) $ listOf genInst
+        insts <- sized $ \n -> resize (n `div` 16) $ listOf genInst
         return (PicoC insts)
 
 instance Arbitrary Inst where 

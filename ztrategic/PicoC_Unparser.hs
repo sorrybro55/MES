@@ -10,6 +10,10 @@ unparser (PicoC insts) = f insts
 
 unparserINST:: Inst -> String 
 unparserINST (Atrib str exp) = str ++ " = " ++ unparserEXP exp ++ "; "
+unparserINST (ReturnString str) = "return " ++ str ++ "; "
+unparserINST (ReturnInt val) = "return " ++ show val ++ "; "
+unparserINST (ReturnBool False) = "return @false; "
+unparserINST (ReturnBool True) = "return @true; "
 unparserINST (Init INT str) = "int " ++ str ++ "; "
 unparserINST (Init CHAR str) = "char " ++ str ++ "; "
 unparserINST (While exp bc) = "while ( " ++ unparserEXP exp ++ " ){ " ++ unparserINST_aux bc ++ " }"
